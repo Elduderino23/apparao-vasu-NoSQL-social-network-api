@@ -4,22 +4,22 @@ const userSchema = require('./Thought');
 // 
 const userSchema = new Schema(
   {
-    first: {
+    username: {
       type: String,
       required: true,
       max_length: 50,
     },
-    last: {
+    email: {
+      type: String, match: [`/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/`, 'error message, please try again'],
+      required: true,
+      max_length: 50,
+    },
+    thoughts: {
       type: String,
       required: true,
       max_length: 50,
     },
-    github: {
-      type: String,
-      required: true,
-      max_length: 50,
-    },
-    assignments: [userSchema],
+    friends: [userSchema],
   },
   {
     toJSON: {
