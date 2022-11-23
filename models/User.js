@@ -7,19 +7,21 @@ const userSchema = new Schema(
     username: {
       type: String,
       required: true,
-      max_length: 50,
+      unique: true,
+      trim: true,
     },
     email: {
-      type: String, match: [`/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/`, 'error message, please try again'],
+      type: String, 
+      match: [`/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/`, 'error message, please try again'],
       required: true,
-      max_length: 50,
+      unique: true,
     },
-    thoughts: {
-      type: String,
-      required: true,
-      max_length: 50,
-    },
-    friends: [userSchema],
+  thoughts : [
+      {type: mongoose.Schema.Types.ObjectId,ref:'Thought'}
+  ],
+  friends : [
+    {type: mongoose.Schema.Types.ObjectId,ref:'User'}
+  ],
   },
   {
     toJSON: {
@@ -27,7 +29,9 @@ const userSchema = new Schema(
     },
   }
 );
-
-const User = model('user', userSchema);
+userSchema.virtual('friendCount').get(function() {
+  return this.friends.length;
+});
+const User = model('User', userSchema);
 
 module.exports = User;
