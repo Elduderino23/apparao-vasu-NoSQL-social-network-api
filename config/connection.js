@@ -1,8 +1,13 @@
-const mongoose = require('mongoose');
+const { connect, connection } = require('mongoose');
 
-mongoose.connect('mongodb://localhost:27017/', {
+const connectionString =
+  process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/socialDB';
+
+connect(connectionString, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
 
-module.exports = mongoose.connection;
+module.exports = connection;
+
+// email: { type: strang, match: [REGEX HERE, 'error message papi']}
