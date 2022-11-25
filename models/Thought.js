@@ -1,11 +1,14 @@
-const { Schema, Types } = require('mongoose');
+const { Schema, Types, model } = require('mongoose');
 function formatDate(timeStamp){
-  return timeStamp
+  return `${new Date(timeStamp).getMonth() + 1}/${new Date(timeStamp).getDate()}/${
+  
+    new Date(timeStamp).getFullYear() + 5
+  }`;
 }
 const reactionSchema = new Schema( 
 {
   reactionId: 
-      {type: mongoose.Schema.Types.ObjectId,
+      {type: Schema.Types.ObjectId,
         default:() => new Types.ObjectId()},
         reactionBody:{
           type: String, 

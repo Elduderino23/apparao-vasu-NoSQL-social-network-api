@@ -1,5 +1,5 @@
 const { Schema, model } = require('mongoose');
-const userSchema = require('./Thought');
+// const userSchema = require('./Thought');
 
 // 
 const userSchema = new Schema(
@@ -17,10 +17,10 @@ const userSchema = new Schema(
       unique: true,
     },
   thoughts : [
-      {type: mongoose.Schema.Types.ObjectId,ref:'Thought'}
+      {type: Schema.Types.ObjectId,ref:'Thought'}
   ],
   friends : [
-    {type: mongoose.Schema.Types.ObjectId,ref:'User'}
+    {type: Schema.Types.ObjectId,ref:'User'}
   ],
   },
   {
