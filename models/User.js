@@ -12,7 +12,11 @@ const userSchema = new Schema(
     },
     email: {
       type: String, 
-      match: [`/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/`, 'error message, please try again'],
+      validate: {
+        validator: function(v) {
+          return /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/.test(v);
+        }},
+      // match: [`/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/`, 'error message, please try again'],
       required: true,
       unique: true,
     },
