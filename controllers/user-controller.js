@@ -3,7 +3,7 @@ const { User } = require('../models');
 module.exports = {
   // Get all users
   getUser(req, res) {
-    User.find()
+    User.find().populate("thoughts")
       .then((users) => res.json(users))
       .catch((err) => res.status(500).json(err));
   },
@@ -33,7 +33,7 @@ module.exports = {
       .then((user) =>
         !user
           ? res.status(404).json({ message: 'No user with that ID' })
-          : Student.deleteMany({ _id: { $in: user.students } })
+          :  res.json({ message: 'user and students deleted!' })
       )
       .then(() => res.json({ message: 'user and students deleted!' }))
       .catch((err) => res.status(500).json(err));
