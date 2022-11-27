@@ -13,7 +13,7 @@ removeReaction
 router.route('/').get(getThought).post(createThought);
 
 // /api/users/:userId
-router.route('/:userId').get(getSingleThought).delete(deleteThought).put(updateThought);
+router.route('/:thoughtId').get(getSingleThought).delete(deleteThought).put(updateThought);
 
 // /api/users/:userId/thoughts
 router.route('/:thoughtId/reactions/:reactionId').delete(removeReaction)
