@@ -268,3 +268,293 @@ You are required to submit BOTH of the following for review:
 
 ---
 © 2022 Trilogy Education Services, LLC, a 2U, Inc. brand. Confidential and Proprietary. All Rights Reserved.
+
+
+
+
+
+
+
+
+<!-- # NoSQL: Social Network API
+
+## Deployable Video Link
+
+
+## Goal
+The task was to make a NoSQL Social Media application that passed all routing test on Insomnia.
+
+## Technology Use
+  - Javascript
+  - Node.js
+  - Express
+  - Mongoose
+  - MongoDB
+  - VS Code
+  - Git Bash 
+  - GitHub
+
+## Execution
+The first step when creating the social media application with NoSQL was to create the files associated with MVC but with the added benefit of not having a schema.sql file since MongoDB has the added benefit of being a nonstructural version of MySQL. Instead, the schema would be in the models themselves because MongoDB is that flexible. Schemas for reactions and thoughts were in the Thought model while the schema for the users in the User schema. The schema for users in the User schema:
+
+userSchema code:
+```Javascript
+const userSchema = new Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+    email: {
+      type: String, 
+      validate: {
+        validator: function(v) {
+          return /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/.test(v);
+        }},
+
+      required: true,
+      unique: true,
+    },
+  thoughts : [
+      {type: Schema.Types.ObjectId,ref:'Thought'}
+  ],
+  friends : [
+    {type: Schema.Types.ObjectId,ref:'User'}
+  ],
+  },
+  {
+    toJSON: {
+      getters: true,
+    },
+  }
+);
+userSchema.virtual('friendCount').get(function() {
+  return this.friends.length;
+});
+```
+As shown above, the user schema interwoven in the User model so that user routes could utilized both the schema and the model. This would be controlled by the user-controller.js file. The same can be said about the Thought model but with said model there is schemas for thoughts and reaction.
+
+Routes in NoSQL, unlike MySQL, was relatively short and succinct. 
+
+The following code is and example code from user-routes.js:
+```Javascript
+const router = require('express').Router();
+const {
+getUser,
+getSingleUser,
+createUser,
+deleteUser,
+updateUser,
+addFriend,
+removeFriend
+} = require('../../controllers/user-controller');
+
+
+router.route('/').get(getUser).post(createUser);
+
+
+router.route('/:userId').get(getSingleUser).delete(deleteUser).put(updateUser);
+
+
+router.route('/:userId/friends/:friendId').post(addFriend).delete(removeFriend)
+module.exports = router;
+```
+Each const controls each route in Insomnia like updateUser controls put route test, getUser for get routes etc.
+
+An example of the thought-routes.js of this is the code from category-routes.js is shown below:
+```Javascript
+const router = require('express').Router();
+const { Category, Product } = require('../../models');
+
+// The `/api/categories` endpoint
+
+router.get('/', async (req, res) => {
+  // find all categories
+  try {
+    const categoryData = await Category.findAll({
+      // Add Product as a second model to JOIN with
+      include: [{ model: Product }],
+    });
+    res.status(200).json(categoryData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+  // be sure to include its associated Products
+});
+
+router.get('/:id', async (req, res) => {
+  // find one category by its `id` value
+  try {
+    const categoryData = await Category.findByPk(req.params.id, {
+      // Add Product as a second model to JOIN with
+      include: [{ model: Product }],
+    });
+
+    if (!categoryData) {
+      res.status(404).json({ message: 'No category found with that id!' });
+      return;
+    }
+
+    res.status(200).json(categoryData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+  // be sure to include its associated Products
+});
+
+router.post('/', async (req, res) => {
+  // create a new category
+  try {
+    const categoryData = await Category.create(req.body);
+    res.status(200).json(categoryData);
+  } catch (err) {
+    res.status(400).json(err);
+  }
+
+});
+
+router.put('/:id', async (req, res) => {
+  // update a category by its `id` value
+  try {
+    const categoryData = await Category.update(
+      {
+      category_name: req.body.category_name
+    },
+    {
+      where: {
+        id: req.params.id,
+      },
+    }
+    )
+
+    res.status(200).json(categoryData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+router.delete('/:id', async (req, res) => {
+  // delete a category by its `id` value
+  try {
+    const categoryData = await Category.destroy({
+      where: {
+        id: req.params.id,
+      },
+    });
+
+    if (!categoryData) {
+      res.status(404).json({ message: 'No category found with that id!' });
+      return;
+    }
+
+    res.status(200).json(categoryData);
+  } catch (err) {
+    res.status(500).json(err);
+  }
+});
+
+module.exports = router;
+
+
+```
+Async forces the code to work and makes it possible to test on Insomnia. If it works, there is a 200 message that light up. Any other number was an error.  
+
+There was also these two lines of code that had to be filled in so that the server could be ran. The codes are shown below:
+
+```Javascript
+const sequelize = require('./config/connection');
+```
+```Javascript
+sequelize.sync({ force: false }).then(() => {
+app.listen(PORT, () => {
+  console.log(`App listening on port ${PORT}!`);
+})});
+ ```
+The last part in order to work was to fill out the index.js within the models folder. It was the glue that connects the models to each other and essential for routes to make it work in the first place. That code is show below:
+
+ ```Javascript
+const Product = require('./Product');
+const Category = require('./Category');
+const Tag = require('./Tag');
+const ProductTag = require('./ProductTag');
+
+// Products belongsTo Category
+Product.belongsTo(Category, {
+  foreignKey: "category_id",
+  onDelete: "CASCADE",
+});
+// Categories have many Products
+Category.hasMany(Product, {
+  foreignKey: "category_id"
+})
+// Products belongToMany Tags (through ProductTag)
+Product.belongsToMany(Tag, {
+  through: ProductTag,
+  foreignKey: "product_id"
+})
+// Tags belongToMany Products (through ProductTag)
+Tag.belongsToMany(Product, {
+  through: ProductTag,
+  foreignKey: "tag_id"
+});
+
+module.exports = {
+  Product,
+  Category,
+  Tag,
+  ProductTag,
+};
+
+```
+## Result
+
+The following website demonstrates what the final product looks like:
+
+Get request for category:
+
+
+Get by id request for category:
+
+
+
+Put request for category:
+
+
+Delete request for category:
+
+
+
+Get request for tag:
+
+
+Get by id request for tag:
+
+
+Post request for tag:
+
+
+Put request for tag:
+
+
+Delete request for tag:
+
+
+
+Get request for product:
+
+
+Get by id request for product:
+
+
+Post request for product:
+
+
+Put request for product:
+
+
+Delete request for product:
+
+
+ -->
