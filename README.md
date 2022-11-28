@@ -276,7 +276,7 @@ You are required to submit BOTH of the following for review:
 
 
 
-<!-- # NoSQL: Social Network API
+# NoSQL: Social Network API
 
 ## Deployable Video Link
 
@@ -361,200 +361,290 @@ router.route('/:userId').get(getSingleUser).delete(deleteUser).put(updateUser);
 router.route('/:userId/friends/:friendId').post(addFriend).delete(removeFriend)
 module.exports = router;
 ```
-Each const controls each route in Insomnia like updateUser controls put route test, getUser for get routes etc.
+Each const controls each route in Insomnia like updateUser controls put route test, getUser for get routes etc. Each router enables the user to use the said requests in Insomnia. The same can be said about thought-controller.js.
 
-An example of the thought-routes.js of this is the code from category-routes.js is shown below:
+An example of then code from thought-routes.js is shown below:
 ```Javascript
 const router = require('express').Router();
-const { Category, Product } = require('../../models');
+const {
+getThought,
+getSingleThought,
+createThought,
+deleteThought,
+updateThought,
+addReaction,
+removeReaction
+} = require('../../controllers/thought-controllers');
 
-// The `/api/categories` endpoint
+router.route('/').get(getThought).post(createThought);
 
-router.get('/', async (req, res) => {
-  // find all categories
-  try {
-    const categoryData = await Category.findAll({
-      // Add Product as a second model to JOIN with
-      include: [{ model: Product }],
-    });
-    res.status(200).json(categoryData);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-  // be sure to include its associated Products
-});
+router.route('/:thoughtId').get(getSingleThought).delete(deleteThought).put(updateThought);
 
-router.get('/:id', async (req, res) => {
-  // find one category by its `id` value
-  try {
-    const categoryData = await Category.findByPk(req.params.id, {
-      // Add Product as a second model to JOIN with
-      include: [{ model: Product }],
-    });
-
-    if (!categoryData) {
-      res.status(404).json({ message: 'No category found with that id!' });
-      return;
-    }
-
-    res.status(200).json(categoryData);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-  // be sure to include its associated Products
-});
-
-router.post('/', async (req, res) => {
-  // create a new category
-  try {
-    const categoryData = await Category.create(req.body);
-    res.status(200).json(categoryData);
-  } catch (err) {
-    res.status(400).json(err);
-  }
-
-});
-
-router.put('/:id', async (req, res) => {
-  // update a category by its `id` value
-  try {
-    const categoryData = await Category.update(
-      {
-      category_name: req.body.category_name
-    },
-    {
-      where: {
-        id: req.params.id,
-      },
-    }
-    )
-
-    res.status(200).json(categoryData);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  // delete a category by its `id` value
-  try {
-    const categoryData = await Category.destroy({
-      where: {
-        id: req.params.id,
-      },
-    });
-
-    if (!categoryData) {
-      res.status(404).json({ message: 'No category found with that id!' });
-      return;
-    }
-
-    res.status(200).json(categoryData);
-  } catch (err) {
-    res.status(500).json(err);
-  }
-});
+router.route('/:thoughtId/reactions/:reactionId').delete(removeReaction)
+router.route('/:thoughtId/reactions/').post(addReaction)
 
 module.exports = router;
-
-
 ```
-Async forces the code to work and makes it possible to test on Insomnia. If it works, there is a 200 message that light up. Any other number was an error.  
+The models and the routes are controlled by their controllers. For example since reaction schema and thought schema in Thought.js while friends and user schema are in User.js. Example of both are shown below.
 
-There was also these two lines of code that had to be filled in so that the server could be ran. The codes are shown below:
+user-controller.js code:
 
 ```Javascript
-const sequelize = require('./config/connection');
-```
-```Javascript
-sequelize.sync({ force: false }).then(() => {
-app.listen(PORT, () => {
-  console.log(`App listening on port ${PORT}!`);
-})});
- ```
-The last part in order to work was to fill out the index.js within the models folder. It was the glue that connects the models to each other and essential for routes to make it work in the first place. That code is show below:
-
- ```Javascript
-const Product = require('./Product');
-const Category = require('./Category');
-const Tag = require('./Tag');
-const ProductTag = require('./ProductTag');
-
-// Products belongsTo Category
-Product.belongsTo(Category, {
-  foreignKey: "category_id",
-  onDelete: "CASCADE",
-});
-// Categories have many Products
-Category.hasMany(Product, {
-  foreignKey: "category_id"
-})
-// Products belongToMany Tags (through ProductTag)
-Product.belongsToMany(Tag, {
-  through: ProductTag,
-  foreignKey: "product_id"
-})
-// Tags belongToMany Products (through ProductTag)
-Tag.belongsToMany(Product, {
-  through: ProductTag,
-  foreignKey: "tag_id"
-});
+const { User } = require('../models');
 
 module.exports = {
-  Product,
-  Category,
-  Tag,
-  ProductTag,
+  // Get all users
+  getUser(req, res) {
+    User.find().populate("thoughts").populate("friends")
+      .then((users) => res.json(users))
+      .catch((err) => res.status(500).json(err));
+  },
+  // Get a user
+  getSingleUser(req, res) {
+    User.findOne({ _id: req.params.userId })
+      .select('-__v')
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user with that ID' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  // Create a user
+  createUser(req, res) {
+    User.create(req.body)
+      .then((user) => res.json(user))
+      .catch((err) => {
+        console.log(err);
+        return res.status(500).json(err);
+      });
+  },
+  // Delete a user
+  deleteUser(req, res) {
+    User.findOneAndDelete({ _id: req.params.userId })
+      .then((user) =>{
+        if (!user) {
+          return res.status(404).json({ message: 'No user with that ID' })
+        }
+  })
+      .then(() => res.json({ message: 'user deleted!' }))
+      .catch((err) => res.status(500).json(err));
+  },
+  // Update a user
+  updateUser(req, res) {
+    User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $set: req.body },
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user with this id!' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  addFriend(req, res) {
+    User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $push: {
+        friends: req.params.friendId
+      }},
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user friend with this id!' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  removeFriend(req, res) {
+    User.findOneAndUpdate(
+      { _id: req.params.userId },
+      { $pull: {
+        friends: req.params.friendId
+      }},
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user friend with this id!' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
 };
+```
+thought-controller.js code:
 
+```Javascript
+const { User, Thought } = require('../models');
+
+module.exports = {
+  // Get all thoughts
+  getThought(req, res) {
+    Thought.find()
+      .then((thoughts) => res.json(thoughts))
+      .catch((err) => res.status(500).json(err));
+  },
+  // Get a thought
+  getSingleThought(req, res) {
+    Thought.findOne({ _id: req.params.thoughtId })
+      .select('-__v')
+      .then((thought) =>
+        !thought
+          ? res.status(404).json({ message: 'No thought with that ID' })
+          : res.json(thought)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  // Create a thought
+  createThought(req, res) {
+    Thought.create(req.body)
+      .then((thought) => {
+        User.findOneAndUpdate(
+          { _id: req.body.userId },
+          { $push: {
+            thoughts: thought._id
+          } },
+          { new: true }
+        )
+          .then((user) =>
+            !user
+              ? res.status(404).json({ message: 'No user with thought with this id!' })
+              : res.json(user)
+          )
+          .catch((err) => res.status(500).json(err));
+      })
+      .catch((err) => {
+        console.log(err);
+        return res.status(500).json(err);
+      });
+  },
+  // Delete a thought
+  deleteThought(req, res) {
+    Thought.findOneAndDelete({ _id: req.params.thoughtId })
+      .then((thought) =>
+        !thought
+          ? res.status(404).json({ message: 'No thought with that ID' })
+          : Thought.findOneAndUpdate({ thoughts: req.params.thoughtId }, 
+          { $pull: { thoughts : req.params.thoughtId } }
+            // { _id: { $pull: thought.user } })
+          ))
+      .then(() => res.json({ message: 'thought deleted!' }))
+      .catch((err) => res.status(500).json(err));
+  },
+  // Update a thought
+  updateThought(req, res) {
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $set: req.body },
+      { runValidators: true, new: true }
+    )
+      .then((thought) =>
+        !thought
+          ? res.status(404).json({ message: 'No thought with this id!' })
+          : res.json(thought)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  addReaction(req, res) {
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $push: {
+        reactions: req.body
+      }},
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user friend with this id!' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+  removeReaction(req, res) {
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $pull: {
+        reactions: {
+            reactionId: req.params.reactionId
+        }
+      }},
+      { runValidators: true, new: true }
+    )
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No user friend with this id!' })
+          : res.json(user)
+      )
+      .catch((err) => res.status(500).json(err));
+  },
+};
+ ```
+The last part was to make the index.js files in api and routes and have the server.js. The server.js is the brain of the entire code. With out the file, none of the applications works That code is show below:
+
+ ```Javascript
+const express = require('express');
+const db = require('./config/connection');
+
+const routes = require('./routes')
+
+const PORT = process.env.PORT || 3001;
+const app = express();
+
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(routes);
+
+db.once('open', () => {
+    app.listen(PORT, () => {
+      console.log(`API server running on port https//${PORT}!`);
+    });
+  });
 ```
 ## Result
 
 The following website demonstrates what the final product looks like:
 
-Get request for category:
+Get request for User:
 
 
-Get by id request for category:
+Get by id request for User:
 
 
-
-Put request for category:
-
-
-Delete request for category:
+Put request for User:
 
 
-
-Get request for tag:
-
-
-Get by id request for tag:
-
-
-Post request for tag:
-
-
-Put request for tag:
-
-
-Delete request for tag:
+Delete request for User:
 
 
 
-Get request for product:
+Get request for Thought:
 
 
-Get by id request for product:
+Get by id request for Thought:
 
 
-Post request for product:
+Post request for Thought:
 
 
-Put request for product:
+Put request for Thought:
 
 
-Delete request for product:
+Delete request for Thought:
 
 
- -->
+Post request for Friend:
+
+
+Delete request for Friend:
+
+Post request for Reaction:
+
+
+Delete request for Reaction:
+
+
+

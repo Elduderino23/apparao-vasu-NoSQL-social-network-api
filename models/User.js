@@ -1,7 +1,7 @@
 const { Schema, model } = require('mongoose');
-// const userSchema = require('./Thought');
 
-// 
+
+// The User Schema
 const userSchema = new Schema(
   {
     username: {
@@ -16,7 +16,7 @@ const userSchema = new Schema(
         validator: function(v) {
           return /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/.test(v);
         }},
-      // match: [`/^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/`, 'error message, please try again'],
+      
       required: true,
       unique: true,
     },

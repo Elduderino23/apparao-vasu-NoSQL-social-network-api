@@ -10,4 +10,3 @@ connect(connectionString, {
 
 module.exports = connection;
 
-// email: { type: strang, match: [REGEX HERE, 'error message papi']}
